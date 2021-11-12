@@ -51,7 +51,7 @@ class DHKeyExchange(private val startingKey: ByteArray? = null) {
         }
     }
 
-    fun setReceivedPublicKey(pb: ByteArray, length: Int? = null) {
+    fun setReceivedPublicKey(pb: ByteArray) {
         val keyFactory = KeyFactory.getInstance("DH")
         val x509EncodedKeySpec = X509EncodedKeySpec(pb)
         val receivedPubKey = keyFactory.generatePublic(x509EncodedKeySpec)
