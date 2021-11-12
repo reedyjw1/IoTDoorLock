@@ -26,7 +26,6 @@ class MainActivity : AppCompatActivity() {
 
     private val lockListObserver =
         Observer { list: List<UiLock> ->
-            Log.i(TAG, "observer: Updated=$list")
             this.updateLockList(list)
         }
 
