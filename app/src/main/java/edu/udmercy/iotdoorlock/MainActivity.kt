@@ -4,10 +4,6 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -64,6 +60,10 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
             BTDialogFragment().setCommunicationInterface(this).show(supportFragmentManager, "bluetoothDevice")
         }
 
+        testFab.setOnClickListener {
+            viewModel.sendMsg("testing")
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             requestMultiplePermissions.launch(
                 arrayOf(
@@ -100,6 +100,8 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
 
             val recvMesg = server.decrypt(encrypted)
             Log.i(TAG, "onCreate: ServerDecrypt=${recvMesg}")
+
+
         }
 
     }
@@ -129,6 +131,12 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
     }
 
     override fun updateSelectedBluetoothDevice(device: BluetoothDevice) {
+        viewModel.startBluetoothConnection(device)
         Log.i(TAG, "updateSelectedBluetoothDevice: $device")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        viewModel.disconnectFromDevice()
     }
 }
