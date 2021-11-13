@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">IoTDoorLock</string>
+    <string name="bt_dialog_instructions">Please Select the Door Lock Device:</string>
 </resources>
