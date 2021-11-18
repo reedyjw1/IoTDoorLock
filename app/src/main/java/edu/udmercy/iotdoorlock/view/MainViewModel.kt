@@ -8,6 +8,8 @@ import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import edu.udmercy.iotdoorlock.bluetooth.BluetoothHandler
+import edu.udmercy.iotdoorlock.bluetooth.BluetoothReceiver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.IOException
@@ -25,10 +27,25 @@ class MainViewModel: ViewModel() {
     var scanningFlag: Boolean = false
     val bluetoothDevice: MutableLiveData<BluetoothDevice> = MutableLiveData()
     private var bluetoothHandler: BluetoothHandler? = null
+    private val bluetoothListener = object : BluetoothReceiver {
+        override fun receivedBluetoothMessage(msg: String) {
+            Log.i(TAG, "receivedBluetoothMessage: $msg")
+        }
+
+        override fun errorSending(e: String) {
+            Log.i(TAG, "errorSending: $e")
+        }
+
+        override fun errorReading(e: String) {
+            Log.i(TAG, "errorReading: $e")
+        }
+    }
 
     fun startBluetoothConnection(device: BluetoothDevice) {
         viewModelScope.launch(Dispatchers.IO) {
-            bluetoothHandler = BluetoothHandler(device).apply { connect() }
+            bluetoothHandler = BluetoothHandler(device)
+            bluetoothHandler?.setBluetoothReceiverListener(this@MainViewModel.bluetoothListener)
+            bluetoothHandler?.connect()
         }
     }
 
@@ -40,33 +57,5 @@ class MainViewModel: ViewModel() {
         bluetoothHandler?.disconnect()
     }
 
-    private inner class BluetoothHandler(private val device: BluetoothDevice) {
 
-        var bluetoothSocket: BluetoothSocket? = null
-        val uuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
-
-        fun sendMessage(msg: String) {
-            val formatted = msg + "\n"
-            bluetoothSocket?.outputStream?.write(formatted.toByteArray())
-        }
-
-        fun connect() {
-            val adapter = BluetoothAdapter.getDefaultAdapter()
-            val connectionDevice = adapter.getRemoteDevice(device.address)
-
-            if (bluetoothSocket == null) {
-                bluetoothSocket = connectionDevice.createInsecureRfcommSocketToServiceRecord(uuid)
-                try {
-                    bluetoothSocket!!.connect()
-                } catch (e: Exception) {
-                    Log.i(TAG, "connect: ${e.localizedMessage}")
-                }
-            }
-        }
-
-        fun disconnect() {
-            bluetoothSocket?.close()
-            bluetoothSocket = null
-        }
-    }
 }
