@@ -41,9 +41,11 @@ class BluetoothHandler(private val device: BluetoothDevice) {
                         run()
                     }
                 }
+                forwardingListener?.connected(true)
 
             } catch (e: Exception) {
                 Log.e(TAG, "connect Error: ${e.localizedMessage}")
+                forwardingListener?.connected(false)
             }
         }
     }
@@ -96,6 +98,7 @@ class BluetoothHandler(private val device: BluetoothDevice) {
             try {
                 alive = false
                 mmSocket.close()
+                listener?.connected(false)
             } catch (e: IOException) {
                 Log.e(TAG, "Could not close the connect socket", e)
             }

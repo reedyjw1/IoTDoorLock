@@ -8,6 +8,7 @@ import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.lifecycle.Observer
@@ -22,6 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import edu.udmercy.iotdoorlock.bluetooth.BTDialogFragment
 import edu.udmercy.iotdoorlock.bluetooth.CommunicationInterface
+import edu.udmercy.iotdoorlock.utils.SingleEvent
 
 
 class MainActivity : AppCompatActivity(), CommunicationInterface {
@@ -39,12 +41,24 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
         }
 
     private val bluetoothDeviceObserver =
-        Observer { device: BluetoothDevice ->
+        Observer { device: BluetoothDevice? ->
             Log.i(TAG, "BluetoothDeviceObserver: Updated=$device")
         }
 
     private val adapter by lazy {
         RecyclerAdapter()
+    }
+
+    private val isConnectedObserver = Observer { event: SingleEvent<Boolean> ->
+        event.getContentIfNotHandledOrNull()?.let { status ->
+            if (status) {
+                Toast.makeText(this, "Connected to Device!", Toast.LENGTH_LONG).show()
+            } else {
+                Toast.makeText(this, "Disconnected from Device!", Toast.LENGTH_LONG).show()
+            }
+
+        }
+
     }
 
 
@@ -55,7 +69,7 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
         Log.i(TAG, "onCreate: Bluetooth adapter available=${btAdapter!=null}")
         Log.i(TAG, "onCreate: Bluetooth adapter enabled=${btAdapter.isEnabled}")
 
-        viewModel.lockList.postValue(mutableListOf(UiLock("test", "IoT Door Lock 1", LockState.LOCKED)))
+        //viewModel.lockList.postValue(mutableListOf(UiLock("test", "IoT Door Lock 1", LockState.LOCKED)))
         bluetoothFab.setOnClickListener {
             BTDialogFragment().setCommunicationInterface(this).show(supportFragmentManager, "bluetoothDevice")
         }
@@ -116,12 +130,14 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
         super.onResume()
         viewModel.lockList.observe(this, lockListObserver)
         viewModel.bluetoothDevice.observe(this, bluetoothDeviceObserver)
+        viewModel.connectionStatus.observe(this, isConnectedObserver)
     }
 
     override fun onPause() {
         super.onPause()
         viewModel.lockList.removeObserver(lockListObserver)
         viewModel.bluetoothDevice.removeObserver(bluetoothDeviceObserver)
+        viewModel.connectionStatus.removeObserver(isConnectedObserver)
     }
 
     private val requestMultiplePermissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->

@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import edu.udmercy.iotdoorlock.bluetooth.BluetoothHandler
 import edu.udmercy.iotdoorlock.bluetooth.BluetoothReceiver
+import edu.udmercy.iotdoorlock.utils.SingleEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.IOException
@@ -27,6 +28,8 @@ class MainViewModel: ViewModel() {
     var scanningFlag: Boolean = false
     val bluetoothDevice: MutableLiveData<BluetoothDevice> = MutableLiveData()
     private var bluetoothHandler: BluetoothHandler? = null
+    val connectionStatus:  MutableLiveData<SingleEvent<Boolean>> = MutableLiveData()
+
     private val bluetoothListener = object : BluetoothReceiver {
         override fun receivedBluetoothMessage(msg: String) {
             Log.i(TAG, "receivedBluetoothMessage: $msg")
@@ -38,6 +41,13 @@ class MainViewModel: ViewModel() {
 
         override fun errorReading(e: String) {
             Log.i(TAG, "errorReading: $e")
+        }
+
+        override fun connected(isConnected: Boolean) {
+            connectionStatus.postValue(SingleEvent(isConnected))
+            if (!isConnected) {
+                bluetoothDevice.postValue(null)
+            }
         }
     }
 
