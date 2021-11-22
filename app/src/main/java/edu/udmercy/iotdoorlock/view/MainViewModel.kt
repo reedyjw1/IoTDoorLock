@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import edu.udmercy.iotdoorlock.bluetooth.BluetoothHandler
 import edu.udmercy.iotdoorlock.bluetooth.BluetoothReceiver
+import edu.udmercy.iotdoorlock.network.NetworkManager
 import edu.udmercy.iotdoorlock.utils.SingleEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -28,6 +29,7 @@ class MainViewModel: ViewModel() {
     var scanningFlag: Boolean = false
     val bluetoothDevice: MutableLiveData<BluetoothDevice> = MutableLiveData()
     private var bluetoothHandler: BluetoothHandler? = null
+    private var networkManager: NetworkManager? = null
     val connectionStatus:  MutableLiveData<SingleEvent<Boolean>> = MutableLiveData()
 
     private val bluetoothListener = object : BluetoothReceiver {
@@ -59,12 +61,24 @@ class MainViewModel: ViewModel() {
         }
     }
 
+    fun startWifiTcpConnection() {
+        viewModelScope.launch(Dispatchers.IO) {
+            networkManager = NetworkManager()
+            networkManager?.run()
+        }
+    }
+
+    fun sendNetworkRequest(msg: String) {
+        networkManager?.sendNetworkMessage(msg)
+    }
+
     fun sendMsg(msg: String) {
         bluetoothHandler?.sendMessage(msg)
     }
 
     fun disconnectFromDevice() {
         bluetoothHandler?.disconnect()
+        networkManager?.onDisconnect()
     }
 
 
