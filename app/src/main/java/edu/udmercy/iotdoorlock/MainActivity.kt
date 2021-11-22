@@ -73,11 +73,10 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
         bluetoothFab.setOnClickListener {
             BTDialogFragment().setCommunicationInterface(this).show(supportFragmentManager, "bluetoothDevice")
         }
-        viewModel.startWifiTcpConnection()
+        //viewModel.startWifiTcpConnection()
         testFab.setOnClickListener {
-            //viewModel.sendMsg("testing")
-
-            viewModel.sendNetworkRequest("Hello ESP32 from the Wifi!")
+            viewModel.sendBluetoothMsg("{\"username\": \"john123\", \"password\": \"adminpassword\"}")
+            //viewModel.sendNetworkRequest("Hello ESP32 from the Wifi!")
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {

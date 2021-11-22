@@ -72,7 +72,7 @@ class MainViewModel: ViewModel() {
         networkManager?.sendNetworkMessage(msg)
     }
 
-    fun sendMsg(msg: String) {
+    fun sendBluetoothMsg(msg: String) {
         bluetoothHandler?.sendMessage(msg)
     }
 
