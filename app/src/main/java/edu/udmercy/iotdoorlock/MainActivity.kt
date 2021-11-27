@@ -14,16 +14,14 @@ import androidx.activity.viewModels
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import edu.udmercy.iotdoorlock.cryptography.DHKeyExchange
-import edu.udmercy.iotdoorlock.view.LockState
-import edu.udmercy.iotdoorlock.view.MainViewModel
-import edu.udmercy.iotdoorlock.view.RecyclerAdapter
-import edu.udmercy.iotdoorlock.view.UiLock
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import edu.udmercy.iotdoorlock.bluetooth.BTDialogFragment
 import edu.udmercy.iotdoorlock.bluetooth.CommunicationInterface
 import edu.udmercy.iotdoorlock.utils.SingleEvent
+import edu.udmercy.iotdoorlock.utils.fromJson
+import edu.udmercy.iotdoorlock.view.*
 
 
 class MainActivity : AppCompatActivity(), CommunicationInterface {
@@ -68,6 +66,8 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
         recyclerView.adapter = adapter
         Log.i(TAG, "onCreate: Bluetooth adapter available=${btAdapter!=null}")
         Log.i(TAG, "onCreate: Bluetooth adapter enabled=${btAdapter.isEnabled}")
+
+        viewModel.getMostRecentLockList(null)
 
         //viewModel.lockList.postValue(mutableListOf(UiLock("test", "IoT Door Lock 1", LockState.LOCKED)))
         bluetoothFab.setOnClickListener {

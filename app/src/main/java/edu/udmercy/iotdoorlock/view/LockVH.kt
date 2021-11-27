@@ -15,12 +15,12 @@ class LockVH(itemView: View): RecyclerView.ViewHolder(itemView) {
             value?.let { information ->
                 Log.i("ViewHolder", "updating List: $information")
                 itemView.titleTextView.text = information.name
-                itemView.descriptionChip.text = if (information.locked == LockState.LOCKED) {
+                itemView.descriptionChip.text = if (information.locked == 1) {
                     "Locked"
                 } else {
                     "Unlocked"
                 }
-                itemView.descriptionChip.isChecked = information.locked == LockState.LOCKED
+                itemView.descriptionChip.isChecked = information.locked == 1
                 itemView.descriptionChip.setOnClickListener {
                     // TODO - Propagate on click to view model
                 }
