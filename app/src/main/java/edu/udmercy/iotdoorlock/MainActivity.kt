@@ -8,6 +8,7 @@ import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -64,18 +65,15 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         recyclerView.adapter = adapter
-        Log.i(TAG, "onCreate: Bluetooth adapter available=${btAdapter!=null}")
-        Log.i(TAG, "onCreate: Bluetooth adapter enabled=${btAdapter.isEnabled}")
 
         viewModel.getMostRecentLockList(null)
 
-        //viewModel.lockList.postValue(mutableListOf(UiLock("test", "IoT Door Lock 1", LockState.LOCKED)))
         bluetoothFab.setOnClickListener {
             BTDialogFragment().setCommunicationInterface(this).show(supportFragmentManager, "bluetoothDevice")
         }
         //viewModel.startWifiTcpConnection()
+        testFab.visibility = View.INVISIBLE
         testFab.setOnClickListener {
-            viewModel.sendBluetoothMsg("{\"username\": \"john123\", \"password\": \"adminpassword\"}")
             //viewModel.sendNetworkRequest("Hello ESP32 from the Wifi!")
         }
 

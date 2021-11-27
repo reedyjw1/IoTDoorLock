@@ -58,6 +58,8 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
             connectionStatus.postValue(SingleEvent(isConnected))
             if (!isConnected) {
                 bluetoothDevice.postValue(null)
+            } else {
+                sendBluetoothMsg("{\"username\": \"john123\", \"password\": \"adminpassword\"}")
             }
         }
     }
