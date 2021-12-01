@@ -6,7 +6,7 @@ data class UiLock (
     val uid: String,
     val name: String,
     val ipAddress: String,
-    val locked: Int,
+    var locked: Int,
 ){
     companion object{
         val DIFFER = object: DiffUtil.ItemCallback<UiLock>(){

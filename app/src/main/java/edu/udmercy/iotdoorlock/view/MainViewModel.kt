@@ -16,6 +16,7 @@ import edu.udmercy.iotdoorlock.bluetooth.BluetoothHandler
 import edu.udmercy.iotdoorlock.bluetooth.BluetoothReceiver
 import edu.udmercy.iotdoorlock.model.SavedDevice
 import edu.udmercy.iotdoorlock.model.SavedDeviceList
+import edu.udmercy.iotdoorlock.network.IoTDeviceStateInterface
 import edu.udmercy.iotdoorlock.network.NetworkManager
 import edu.udmercy.iotdoorlock.utils.SingleEvent
 import edu.udmercy.iotdoorlock.utils.fromJson
@@ -37,8 +38,8 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
     var scanningFlag: Boolean = false
     val bluetoothDevice: MutableLiveData<BluetoothDevice> = MutableLiveData()
     private var bluetoothHandler: BluetoothHandler? = null
-    private var networkManager: NetworkManager? = null
     val connectionStatus: MutableLiveData<SingleEvent<Boolean>> = MutableLiveData()
+    private val hashDeviceList: MutableMap<String, NetworkManager> = mutableMapOf()
 
     private val bluetoothListener = object : BluetoothReceiver {
         override fun receivedBluetoothMessage(msg: String) {
@@ -72,24 +73,17 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
         }
     }
 
-    fun startWifiTcpConnection() {
-        viewModelScope.launch(Dispatchers.IO) {
-            networkManager = NetworkManager()
-            networkManager?.run()
-        }
-    }
-
-    fun sendNetworkRequest(msg: String) {
-        networkManager?.sendNetworkMessage(msg)
-    }
-
     fun sendBluetoothMsg(msg: String) {
         bluetoothHandler?.sendMessage(msg)
     }
 
+    fun ioTDeviceClicked(ipAddress: String, msg: String) {
+        hashDeviceList[ipAddress]?.sendNetworkMessage("john123", "adminpassword", msg)
+    }
+
     fun disconnectFromDevice() {
         bluetoothHandler?.disconnect()
-        networkManager?.onDisconnect()
+        disconnectAndClearHashMap()
     }
 
     private fun saveToSharedPrefs(lock: SavedDevice?) {
@@ -130,9 +124,32 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
 
     fun getMostRecentLockList(ogList: SavedDeviceList?) {
         if (ogList != null) {
-            lockList.postValue(ogList?.savedDevices?.map {
+            disconnectAndClearHashMap()
+
+            lockList.postValue(ogList.savedDevices.map {
                 UiLock(UUID.randomUUID().toString(), it.name, it.ipAddress, it.initialState)
             })
+
+            ogList.savedDevices.forEach {
+                viewModelScope.launch(Dispatchers.IO) {
+                    val listenerObject = object: IoTDeviceStateInterface {
+                        override fun onDeviceStateUpdated(locked: Int, ipAddress: String) {
+                            var indexValue = -1
+                            lockList.value?.forEachIndexed { index, uiLock ->
+                                if (uiLock.ipAddress == ipAddress)  {
+                                    // <May not get mutable list to update, if not need to copy list, update, then repalce entire list
+                                    uiLock.locked = locked
+                                }
+                            }
+
+                        }
+
+                    }
+                    hashDeviceList[it.ipAddress] = NetworkManager(it.ipAddress, listenerObject).also {
+                        it.run()
+                    }
+                }
+            }
         }
 
         val context = getApplication<Application>().applicationContext
@@ -147,6 +164,36 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
             lockList.postValue(savedDevicesList?.savedDevices?.map {
                 UiLock(UUID.randomUUID().toString(), it.name, it.ipAddress, it.initialState)
             })
+            disconnectAndClearHashMap()
+            savedDevicesList?.savedDevices?.forEach {
+                viewModelScope.launch(Dispatchers.IO) {
+                    val listenerObject = object: IoTDeviceStateInterface {
+                        override fun onDeviceStateUpdated(locked: Int, ipAddress: String) {
+                            var indexValue = -1
+                            lockList.value?.forEachIndexed { index, uiLock ->
+                                if (uiLock.ipAddress == ipAddress)  {
+                                    // <May not get mutable list to update, if not need to copy list, update, then repalce entire list
+                                    uiLock.locked = locked
+                                }
+                            }
+
+                        }
+
+                    }
+                    hashDeviceList[it.ipAddress] = NetworkManager(it.ipAddress, listenerObject).also {
+                        it.run()
+                    }
+                }
+            }
+        } else {
+            disconnectAndClearHashMap()
         }
+    }
+
+    private fun disconnectAndClearHashMap() {
+        hashDeviceList.forEach {
+            it.value.onDisconnect()
+        }
+        hashDeviceList.clear()
     }
 }

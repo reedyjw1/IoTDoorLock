@@ -45,7 +45,11 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
         }
 
     private val adapter by lazy {
-        RecyclerAdapter()
+        RecyclerAdapter().apply {
+            onDeviceClick = {
+                viewModel.ioTDeviceClicked(it.ipAddress)
+            }
+        }
     }
 
     private val isConnectedObserver = Observer { event: SingleEvent<Boolean> ->
@@ -71,11 +75,8 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
         bluetoothFab.setOnClickListener {
             BTDialogFragment().setCommunicationInterface(this).show(supportFragmentManager, "bluetoothDevice")
         }
-        //viewModel.startWifiTcpConnection()
+
         testFab.visibility = View.INVISIBLE
-        testFab.setOnClickListener {
-            //viewModel.sendNetworkRequest("Hello ESP32 from the Wifi!")
-        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             requestMultiplePermissions.launch(

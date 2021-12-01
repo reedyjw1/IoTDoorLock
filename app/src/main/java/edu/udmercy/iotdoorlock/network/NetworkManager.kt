@@ -11,9 +11,8 @@ import java.io.InputStreamReader
 import java.io.PrintWriter
 import java.net.Socket
 
-class NetworkManager: Thread() {
+class NetworkManager(private val ipAddress: String, private val listener: IoTDeviceStateInterface): Thread() {
 
-    var ipAddress: String = "10.0.41.79"
     var port: Int = 5679
     var socket: Socket?= null
     private val coroutineScope = MainScope()
@@ -38,6 +37,7 @@ class NetworkManager: Thread() {
                 if (socket?.getInputStream()?.available() != 0) {
                     val msg = InputStreamReader(socket?.getInputStream()).buffered().readLine()
                     Log.i(TAG, "message: $msg")
+                    listener.onDeviceStateUpdated(msg.toInt(), ipAddress)
                 }
 
             } catch (e: Exception) {
@@ -46,12 +46,13 @@ class NetworkManager: Thread() {
         }
     }
 
-    fun sendNetworkMessage(msg: String) {
+    fun sendNetworkMessage(username: String, password: String, msg: String) {
+        val formattedMsg = "{\"username\": \"$username\", \"password\": \"$password\", \"message\": \"$msg\"}"
         coroutineScope.launch(Dispatchers.IO) {
             try {
                 val stream = socket?.getOutputStream() ?: return@launch
                 val printWriter = PrintWriter(stream)
-                printWriter.write(msg)
+                printWriter.write(formattedMsg)
                 printWriter.flush()
             } catch (e: IOException) {
                 Log.i(TAG, "sendNetworkMessage: ${e.localizedMessage} ")

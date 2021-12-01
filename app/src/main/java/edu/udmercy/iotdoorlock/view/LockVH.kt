@@ -9,6 +9,8 @@ import edu.udmercy.iotdoorlock.R
 import kotlinx.android.synthetic.main.lock_cell.view.*
 
 class LockVH(itemView: View): RecyclerView.ViewHolder(itemView) {
+    var deviceClick: OnDeviceClick? = null
+
     var entity: UiLock? = null
         set(value) {
             field = value
@@ -22,7 +24,7 @@ class LockVH(itemView: View): RecyclerView.ViewHolder(itemView) {
                 }
                 itemView.descriptionChip.isChecked = information.locked == 1
                 itemView.descriptionChip.setOnClickListener {
-                    // TODO - Propagate on click to view model
+                    deviceClick?.invoke(information)
                 }
             }
         }
