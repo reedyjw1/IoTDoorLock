@@ -17,6 +17,13 @@ class LockVH(itemView: View): RecyclerView.ViewHolder(itemView) {
             value?.let { information ->
                 Log.i("ViewHolder", "updating List: $information")
                 itemView.titleTextView.text = information.name
+
+                if (information.locked == 3) {
+                    itemView.descriptionChip.visibility = View.INVISIBLE
+                    return@let
+                } else {
+                    itemView.descriptionChip.visibility = View.VISIBLE
+                }
                 itemView.descriptionChip.text = if (information.locked == 1) {
                     "Locked"
                 } else {

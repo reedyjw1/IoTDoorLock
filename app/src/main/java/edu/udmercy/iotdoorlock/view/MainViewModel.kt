@@ -79,11 +79,6 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
     }
 
     fun ioTDeviceClicked(ipAddress: String, msg: Int) {
-        Log.i(TAG, "ioTDeviceClicked: clicled")
-        Log.i(TAG, "ioTDeviceClicked: ${hashDeviceList[ipAddress]}")
-        hashDeviceList.forEach {
-            Log.i(TAG, "ioTDeviceClicked: Each ${it.key}, ${it.value}")
-        }
         hashDeviceList[ipAddress]?.sendNetworkMessage("john123", "adminpassword", msg)
     }
 
@@ -133,7 +128,7 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
             disconnectAndClearHashMap()
 
             lockList.postValue(ogList.savedDevices.map {
-                UiLock(UUID.randomUUID().toString(), it.name, it.ipAddress, it.initialState)
+                UiLock(UUID.randomUUID().toString(), it.name, it.ipAddress, 3)
             })
 
             ogList.savedDevices.forEach {
@@ -171,7 +166,7 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
         if (devices != "") {
             val savedDevicesList = devices.fromJson<SavedDeviceList>()
             lockList.postValue(savedDevicesList?.savedDevices?.map {
-                UiLock(UUID.randomUUID().toString(), it.name, it.ipAddress, it.initialState)
+                UiLock(UUID.randomUUID().toString(), it.name, it.ipAddress, 3)
             })
             disconnectAndClearHashMap()
             savedDevicesList?.savedDevices?.forEach {
