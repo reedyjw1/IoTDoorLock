@@ -47,7 +47,12 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
     private val adapter by lazy {
         RecyclerAdapter().apply {
             onDeviceClick = {
-                viewModel.ioTDeviceClicked(it.ipAddress)
+                Log.i(TAG, "lockState: ${it.locked}")
+                if (it.locked == 0) {
+                    viewModel.ioTDeviceClicked(it.ipAddress, 1)
+                } else {
+                    viewModel.ioTDeviceClicked(it.ipAddress, 0)
+                }
             }
         }
     }
@@ -73,7 +78,8 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
         viewModel.getMostRecentLockList(null)
 
         bluetoothFab.setOnClickListener {
-            BTDialogFragment().setCommunicationInterface(this).show(supportFragmentManager, "bluetoothDevice")
+            BTDialogFragment().setCommunicationInterface(this)
+                .show(supportFragmentManager, "bluetoothDevice")
         }
 
         testFab.visibility = View.INVISIBLE
@@ -88,7 +94,7 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
                     Manifest.permission.ACCESS_COARSE_LOCATION,
                     Manifest.permission.ACCESS_FINE_LOCATION,
 
-                )
+                    )
             )
         } else {
             requestMultiplePermissions.launch(
@@ -122,6 +128,7 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
 
     @SuppressLint("NotifyDataSetChanged")
     private fun updateLockList(list: List<UiLock>) {
+        Log.i(TAG, "updateLockList: updating lock list values")
         adapter.submitList(list)
         adapter.notifyDataSetChanged()
     }
@@ -140,11 +147,12 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
         viewModel.connectionStatus.removeObserver(isConnectedObserver)
     }
 
-    private val requestMultiplePermissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
-        permissions.entries.forEach {
-            Log.e("DEBUG", "${it.key} = ${it.value}")
+    private val requestMultiplePermissions =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+            permissions.entries.forEach {
+                Log.e("DEBUG", "${it.key} = ${it.value}")
+            }
         }
-    }
 
     override fun updateSelectedBluetoothDevice(device: BluetoothDevice) {
         viewModel.startBluetoothConnection(device)

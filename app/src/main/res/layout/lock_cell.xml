@@ -35,14 +35,14 @@
                 android:text="Title"
                 style="@style/TextAppearance.AppCompat.Body2"/>
 
-            <com.google.android.material.chip.Chip
+
+            <com.google.android.material.switchmaterial.SwitchMaterial
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent"
                 android:id="@+id/descriptionChip"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Lock"
                 android:checked="true"
                 style="@style/TextAppearance.AppCompat.Body1"/>
 

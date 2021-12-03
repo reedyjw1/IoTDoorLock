@@ -32,6 +32,11 @@ class NetworkManager(private val ipAddress: String, private val listener: IoTDev
 
     override fun run() {
         running = true
+        try {
+            sendNetworkMessage("john123", "adminpassword", 2)
+        } catch (e: Exception) {
+            Log.e(TAG, "run: ${e.localizedMessage}")
+        }
         while(running && socket != null) {
             try {
                 if (socket?.getInputStream()?.available() != 0) {
@@ -46,14 +51,15 @@ class NetworkManager(private val ipAddress: String, private val listener: IoTDev
         }
     }
 
-    fun sendNetworkMessage(username: String, password: String, msg: String) {
-        val formattedMsg = "{\"username\": \"$username\", \"password\": \"$password\", \"message\": \"$msg\"}"
+    fun sendNetworkMessage(username: String, password: String, msg: Int) {
+        val formattedMsg = "{\"username\": \"$username\", \"password\": \"$password\", \"message\": $msg}"
         coroutineScope.launch(Dispatchers.IO) {
             try {
                 val stream = socket?.getOutputStream() ?: return@launch
                 val printWriter = PrintWriter(stream)
                 printWriter.write(formattedMsg)
                 printWriter.flush()
+                Log.i(TAG, "sendNetworkMessage: $formattedMsg")
             } catch (e: IOException) {
                 Log.i(TAG, "sendNetworkMessage: ${e.localizedMessage} ")
                 onDisconnect()

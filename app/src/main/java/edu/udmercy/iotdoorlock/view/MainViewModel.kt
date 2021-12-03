@@ -11,6 +11,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import edu.udmercy.iotdoorlock.MainActivity
 import edu.udmercy.iotdoorlock.R
 import edu.udmercy.iotdoorlock.bluetooth.BluetoothHandler
 import edu.udmercy.iotdoorlock.bluetooth.BluetoothReceiver
@@ -77,7 +78,12 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
         bluetoothHandler?.sendMessage(msg)
     }
 
-    fun ioTDeviceClicked(ipAddress: String, msg: String) {
+    fun ioTDeviceClicked(ipAddress: String, msg: Int) {
+        Log.i(TAG, "ioTDeviceClicked: clicled")
+        Log.i(TAG, "ioTDeviceClicked: ${hashDeviceList[ipAddress]}")
+        hashDeviceList.forEach {
+            Log.i(TAG, "ioTDeviceClicked: Each ${it.key}, ${it.value}")
+        }
         hashDeviceList[ipAddress]?.sendNetworkMessage("john123", "adminpassword", msg)
     }
 
@@ -135,21 +141,24 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
                     val listenerObject = object: IoTDeviceStateInterface {
                         override fun onDeviceStateUpdated(locked: Int, ipAddress: String) {
                             var indexValue = -1
-                            lockList.value?.forEachIndexed { index, uiLock ->
+                            val tempList = lockList.value
+                            tempList?.forEachIndexed { index, uiLock ->
                                 if (uiLock.ipAddress == ipAddress)  {
+                                    Log.i(TAG, "updateLockList: updating lock list values")
                                     // <May not get mutable list to update, if not need to copy list, update, then repalce entire list
                                     uiLock.locked = locked
                                 }
                             }
+                            lockList.postValue(tempList)
 
                         }
 
                     }
-                    hashDeviceList[it.ipAddress] = NetworkManager(it.ipAddress, listenerObject).also {
-                        it.run()
-                    }
+                    hashDeviceList[it.ipAddress] = NetworkManager(it.ipAddress, listenerObject)
+                    hashDeviceList[it.ipAddress]?.run()
                 }
             }
+            return
         }
 
         val context = getApplication<Application>().applicationContext
@@ -170,19 +179,21 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
                     val listenerObject = object: IoTDeviceStateInterface {
                         override fun onDeviceStateUpdated(locked: Int, ipAddress: String) {
                             var indexValue = -1
-                            lockList.value?.forEachIndexed { index, uiLock ->
+                            val tempList = lockList.value
+                            tempList?.forEachIndexed { index, uiLock ->
                                 if (uiLock.ipAddress == ipAddress)  {
+                                    Log.i(TAG, "updateLockList: updating lock list values")
                                     // <May not get mutable list to update, if not need to copy list, update, then repalce entire list
                                     uiLock.locked = locked
                                 }
                             }
+                            lockList.postValue(tempList)
 
                         }
 
                     }
-                    hashDeviceList[it.ipAddress] = NetworkManager(it.ipAddress, listenerObject).also {
-                        it.run()
-                    }
+                    hashDeviceList[it.ipAddress] = NetworkManager(it.ipAddress, listenerObject)
+                    hashDeviceList[it.ipAddress]?.run()
                 }
             }
         } else {
