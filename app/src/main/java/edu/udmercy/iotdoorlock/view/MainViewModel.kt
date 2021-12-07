@@ -15,6 +15,7 @@ import edu.udmercy.iotdoorlock.MainActivity
 import edu.udmercy.iotdoorlock.R
 import edu.udmercy.iotdoorlock.bluetooth.BluetoothHandler
 import edu.udmercy.iotdoorlock.bluetooth.BluetoothReceiver
+import edu.udmercy.iotdoorlock.model.InitialComms
 import edu.udmercy.iotdoorlock.model.SavedDevice
 import edu.udmercy.iotdoorlock.model.SavedDeviceList
 import edu.udmercy.iotdoorlock.network.IoTDeviceStateInterface
@@ -40,11 +41,16 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
     val bluetoothDevice: MutableLiveData<BluetoothDevice> = MutableLiveData()
     private var bluetoothHandler: BluetoothHandler? = null
     val connectionStatus: MutableLiveData<SingleEvent<Boolean>> = MutableLiveData()
+    val isSsidAndPasswordGood: MutableLiveData<SingleEvent<Boolean?>> = MutableLiveData()
     private val hashDeviceList: MutableMap<String, NetworkManager> = mutableMapOf()
 
     private val bluetoothListener = object : BluetoothReceiver {
         override fun receivedBluetoothMessage(msg: String) {
             Log.i(TAG, "receivedBluetoothMessage: $msg")
+            if (msg == "error") {
+                isSsidAndPasswordGood.postValue(SingleEvent(null))
+                isSsidAndPasswordGood.postValue(SingleEvent(false))
+            }
             saveToSharedPrefs(msg.fromJson<SavedDevice>())
         }
 
@@ -56,19 +62,24 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
             Log.i(TAG, "errorReading: $e")
         }
 
-        override fun connected(isConnected: Boolean) {
+        override fun connected(isConnected: Boolean, ssid: String, password: String) {
             connectionStatus.postValue(SingleEvent(isConnected))
             if (!isConnected) {
                 bluetoothDevice.postValue(null)
             } else {
-                sendBluetoothMsg("{\"username\": \"john123\", \"password\": \"adminpassword\"}")
+                sendBluetoothMsg(InitialComms(
+                    "john123",
+                    "adminpassword",
+                    ssid,
+                    password
+                ).toJson())
             }
         }
     }
 
-    fun startBluetoothConnection(device: BluetoothDevice) {
+    fun startBluetoothConnection(device: BluetoothDevice, ssid: String, password: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            bluetoothHandler = BluetoothHandler(device)
+            bluetoothHandler = BluetoothHandler(device, ssid, password)
             bluetoothHandler?.setBluetoothReceiverListener(this@MainViewModel.bluetoothListener)
             bluetoothHandler?.connect()
         }

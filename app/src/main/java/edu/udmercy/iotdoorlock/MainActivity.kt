@@ -71,6 +71,18 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
 
     }
 
+    private val internetStatusOnEsp32 = Observer { event: SingleEvent<Boolean?> ->
+        event.getContentIfNotHandledOrNull()?.let { status: Boolean? ->
+            if (status == null) {
+                Log.i(TAG, "internestStatusOnEsp32: null")
+            } else if(!status) {
+                Toast.makeText(this, "Invalid Wifi Name or Password. Please try again!", Toast.LENGTH_LONG).show()
+            }
+
+        }
+
+    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -140,6 +152,7 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
         viewModel.lockList.observe(this, lockListObserver)
         viewModel.bluetoothDevice.observe(this, bluetoothDeviceObserver)
         viewModel.connectionStatus.observe(this, isConnectedObserver)
+        viewModel.isSsidAndPasswordGood.observe(this, internetStatusOnEsp32)
     }
 
     override fun onPause() {
@@ -147,6 +160,7 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
         viewModel.lockList.removeObserver(lockListObserver)
         viewModel.bluetoothDevice.removeObserver(bluetoothDeviceObserver)
         viewModel.connectionStatus.removeObserver(isConnectedObserver)
+        viewModel.isSsidAndPasswordGood.removeObserver(internetStatusOnEsp32)
     }
 
     private val requestMultiplePermissions =
@@ -159,7 +173,7 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
     override fun updateSelectedBluetoothDevice(device: BluetoothDevice) {
         val wifiInfoObject = object : WifiInformationInterface {
             override fun wifiInformation(ssid: String, password: String) {
-                viewModel.startBluetoothConnection(device)
+                viewModel.startBluetoothConnection(device, ssid, password)
                 Log.i(TAG, "updateSelectedBluetoothDevice: $device")
             }
 
