@@ -20,6 +20,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import edu.udmercy.iotdoorlock.bluetooth.BTDialogFragment
 import edu.udmercy.iotdoorlock.bluetooth.CommunicationInterface
+import edu.udmercy.iotdoorlock.bluetooth.btWifiDialogFragment.BTWifiDialogFragment
+import edu.udmercy.iotdoorlock.bluetooth.btWifiDialogFragment.WifiInformationInterface
 import edu.udmercy.iotdoorlock.utils.SingleEvent
 import edu.udmercy.iotdoorlock.utils.fromJson
 import edu.udmercy.iotdoorlock.view.*
@@ -155,8 +157,16 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
         }
 
     override fun updateSelectedBluetoothDevice(device: BluetoothDevice) {
-        viewModel.startBluetoothConnection(device)
-        Log.i(TAG, "updateSelectedBluetoothDevice: $device")
+        val wifiInfoObject = object : WifiInformationInterface {
+            override fun wifiInformation(ssid: String, password: String) {
+                viewModel.startBluetoothConnection(device)
+                Log.i(TAG, "updateSelectedBluetoothDevice: $device")
+            }
+
+        }
+        BTWifiDialogFragment().setCommunicationInterface(wifiInfoObject)
+            .show(supportFragmentManager, "WifiInformation")
+
     }
 
     override fun onDestroy() {
