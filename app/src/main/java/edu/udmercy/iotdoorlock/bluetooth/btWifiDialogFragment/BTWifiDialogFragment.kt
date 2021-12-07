@@ -29,8 +29,8 @@ class BTWifiDialogFragment: DialogFragment() {
         display?.getSize(size)
         val height: Int = size.y
         dialog?.window?.setLayout(
-            WindowManager.LayoutParams.MATCH_PARENT,
-            (height * .7).toInt()
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
         )
     }
 
