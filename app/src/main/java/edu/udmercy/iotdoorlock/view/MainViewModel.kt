@@ -95,7 +95,7 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
 
     fun disconnectFromDevice() {
         bluetoothHandler?.disconnect()
-        disconnectAndClearHashMap()
+        //disconnectAndClearHashMap()
     }
 
     private fun saveToSharedPrefs(lock: SavedDevice?) {
@@ -135,11 +135,11 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
     }
 
     fun getMostRecentLockList(ogList: SavedDeviceList?) {
-        if (ogList != null) {
-            disconnectAndClearHashMap()
+        /*if (ogList != null) {
+            //disconnectAndClearHashMap()
 
             lockList.postValue(ogList.savedDevices.map {
-                UiLock(UUID.randomUUID().toString(), it.name, it.ipAddress, 3)
+                UiLock(UUID.randomUUID().toString(), it.name, it.ipAddress, 0)
             })
 
             ogList.savedDevices.forEach {
@@ -160,12 +160,16 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
                         }
 
                     }
-                    hashDeviceList[it.ipAddress] = NetworkManager(it.ipAddress, listenerObject)
-                    hashDeviceList[it.ipAddress]?.run()
+                    Log.i(TAG, "getMostRecentLockList: Starting network with IP: ${it.ipAddress}")
+                    if (hashDeviceList[it.ipAddress] != null && !hashDeviceList[it.ipAddress]?.isAlive!!) {
+                        hashDeviceList[it.ipAddress] = NetworkManager(it.ipAddress, listenerObject)
+                        hashDeviceList[it.ipAddress]?.run()
+                    }
+
                 }
             }
             return
-        }
+        }*/
 
         val context = getApplication<Application>().applicationContext
         val sharedPref = context.getSharedPreferences(
@@ -177,9 +181,9 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
         if (devices != "") {
             val savedDevicesList = devices.fromJson<SavedDeviceList>()
             lockList.postValue(savedDevicesList?.savedDevices?.map {
-                UiLock(UUID.randomUUID().toString(), it.name, it.ipAddress, 3)
+                UiLock(UUID.randomUUID().toString(), it.name, it.ipAddress, 0)
             })
-            disconnectAndClearHashMap()
+            //disconnectAndClearHashMap()
             savedDevicesList?.savedDevices?.forEach {
                 viewModelScope.launch(Dispatchers.IO) {
                     val listenerObject = object: IoTDeviceStateInterface {
@@ -198,12 +202,39 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
                         }
 
                     }
-                    hashDeviceList[it.ipAddress] = NetworkManager(it.ipAddress, listenerObject)
-                    hashDeviceList[it.ipAddress]?.run()
+                    if (hashDeviceList[it.ipAddress] == null) {
+                        hashDeviceList[it.ipAddress] = NetworkManager(it.ipAddress, listenerObject)
+                        hashDeviceList[it.ipAddress]?.run()
+                    }
                 }
             }
         } else {
-            disconnectAndClearHashMap()
+            val savedDevicesList = devices.fromJson<SavedDeviceList>()
+            //disconnectAndClearHashMap()
+            savedDevicesList?.savedDevices?.forEach {
+                viewModelScope.launch(Dispatchers.IO) {
+                    val listenerObject = object: IoTDeviceStateInterface {
+                        override fun onDeviceStateUpdated(locked: Int, ipAddress: String) {
+                            var indexValue = -1
+                            val tempList = lockList.value
+                            tempList?.forEachIndexed { index, uiLock ->
+                                if (uiLock.ipAddress == ipAddress)  {
+                                    Log.i(TAG, "updateLockList: updating lock list values")
+                                    // <May not get mutable list to update, if not need to copy list, update, then repalce entire list
+                                    uiLock.locked = locked
+                                }
+                            }
+                            lockList.postValue(tempList)
+
+                        }
+
+                    }
+                    if (hashDeviceList[it.ipAddress] == null) {
+                        hashDeviceList[it.ipAddress] = NetworkManager(it.ipAddress, listenerObject)
+                        hashDeviceList[it.ipAddress]?.run()
+                    }
+                }
+            }
         }
     }
 

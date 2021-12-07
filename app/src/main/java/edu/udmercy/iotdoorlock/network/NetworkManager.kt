@@ -62,13 +62,13 @@ class NetworkManager(private val ipAddress: String, private val listener: IoTDev
                 Log.i(TAG, "sendNetworkMessage: $formattedMsg")
             } catch (e: IOException) {
                 Log.i(TAG, "sendNetworkMessage: ${e.localizedMessage} ")
-                onDisconnect()
+                //onDisconnect()
             }
         }
     }
 
     fun onDisconnect() {
-        Log.i(TAG, "onDisconnect: disconnect called")
+        Log.i(TAG, "onDisconnect: disconnect called: $ipAddress")
         running = false
         try {
             socket?.close()
