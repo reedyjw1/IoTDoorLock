@@ -6,6 +6,7 @@ import edu.udmercy.iotdoorlock.bluetooth.UiBluetoothDevice
 
 typealias OnDeviceClick = (UiLock) -> Unit
 
+// Links the ViewHolder class with the RecyclerView element
 class RecyclerAdapter: ListAdapter<UiLock, LockVH>(UiLock.DIFFER) {
 
     var onDeviceClick: OnDeviceClick? = null

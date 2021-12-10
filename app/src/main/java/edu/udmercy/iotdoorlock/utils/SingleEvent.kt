@@ -2,7 +2,9 @@ package edu.udmercy.iotdoorlock.utils
 
 /**
  * Emits a single event to be observed.
- * https://medium.com/android-news/sending-events-from-viewmodel-to-activities-fragments-the-right-way-26bb68502b24
+ * (This prevents Toast messages (notification messages through the Android's API) from sending notifications when app first starts,
+ * This is important when LiveData is being observed)
+ * Code implemented using the help of this article: https://medium.com/android-news/sending-events-from-viewmodel-to-activities-fragments-the-right-way-26bb68502b24
  */
 open class SingleEvent<out T>(private val content: T) {
 

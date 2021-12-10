@@ -4,6 +4,7 @@ data class EncryptedMessage(
     val cipherText: ByteArray,
     val encodedParams: ByteArray
 ) {
+    // Checks if the cipher text and ecoded params match another cipher text and params (useful for validating if the implementation works)
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

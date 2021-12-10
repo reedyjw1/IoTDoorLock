@@ -2,6 +2,7 @@ package edu.udmercy.iotdoorlock.view
 
 import androidx.recyclerview.widget.DiffUtil
 
+// Data class that is used for presenting the Lock information the the UI
 data class UiLock (
     val uid: String,
     val name: String,
@@ -20,13 +21,4 @@ data class UiLock (
 
         }
     }
-}
-
-data class UiLockList(
-    val deviceList: MutableList<UiLock>
-)
-
-enum class LockState(val int: Int) {
-    LOCKED(1),
-    UNLOCKED(0)
 }

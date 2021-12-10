@@ -33,21 +33,27 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
         private const val TAG = "MainActivity"
     }
 
+    // Initializes the ViewModel
     private val viewModel by viewModels<MainViewModel>()
-    private val btAdapter = BluetoothAdapter.getDefaultAdapter()
 
+    // These observers are responsible for calling code to update the UI
+    // When the value in the LiveData (in the ViewModel) is changed
     private val lockListObserver =
         Observer { list: List<UiLock> ->
+            // Refreshes the lock list with a new list from the ViewModel
             this.updateLockList(list)
         }
 
+    // Updates the currently connected bluetooth device
     private val bluetoothDeviceObserver =
         Observer { device: BluetoothDevice? ->
             Log.i(TAG, "BluetoothDeviceObserver: Updated=$device")
         }
 
+    // Adapter that is responsible for presenting the IoT Locks
     private val adapter by lazy {
         RecyclerAdapter().apply {
+            // When a lock is clicked, send the command to the ViewModel
             onDeviceClick = {
                 Log.i(TAG, "lockState: ${it.locked}")
                 if (it.locked == 0) {
@@ -59,6 +65,7 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
         }
     }
 
+    // Shows user notification when the Bluetooth device becomes connected or disconnected
     private val isConnectedObserver = Observer { event: SingleEvent<Boolean> ->
         event.getContentIfNotHandledOrNull()?.let { status ->
             if (status) {
@@ -71,6 +78,7 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
 
     }
 
+    // Shows an error notification to the user if the SSID or Password they entered is incorrect
     private val internetStatusOnEsp32 = Observer { event: SingleEvent<Boolean?> ->
         event.getContentIfNotHandledOrNull()?.let { status: Boolean? ->
             if (status == null) {
@@ -87,17 +95,22 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        // Assigns the adapter to the RecyclerView UI element
         recyclerView.adapter = adapter
 
+        // Get the lock list if it has been saved to local storage before
         viewModel.getMostRecentLockList(null)
 
+        // Sets the bluetooth button click listener for presenting the DialogFragment for the
+        // user to choose a Bluetooth device
         bluetoothFab.setOnClickListener {
             BTDialogFragment().setCommunicationInterface(this)
                 .show(supportFragmentManager, "bluetoothDevice")
         }
-
+        // Hides a test button for development
         testFab.visibility = View.INVISIBLE
 
+        // If the phone is on an Android version above S, these permission need to be requested
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             requestMultiplePermissions.launch(
                 arrayOf(
@@ -121,6 +134,7 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
             )
         }
 
+        // Code for executing the Diffie-Hellman key exchange locally between to instances locally on the device (for testing purposes)
         lifecycleScope.launch(Dispatchers.IO) {
             val client = DHKeyExchange()
             val server = DHKeyExchange(client.pubKey.encoded)
@@ -142,27 +156,33 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
 
     @SuppressLint("NotifyDataSetChanged")
     private fun updateLockList(list: List<UiLock>) {
+        // Updates the list that is associated with the recycler view
         Log.i(TAG, "updateLockList: updating lock list values")
         adapter.submitList(list)
         adapter.notifyDataSetChanged()
     }
 
+    // Called when the application is resumed
     override fun onResume() {
         super.onResume()
+        // Assigns the observers to the live data in the view model
         viewModel.lockList.observe(this, lockListObserver)
         viewModel.bluetoothDevice.observe(this, bluetoothDeviceObserver)
         viewModel.connectionStatus.observe(this, isConnectedObserver)
         viewModel.isSsidAndPasswordGood.observe(this, internetStatusOnEsp32)
     }
 
+    // Called when the application is exited
     override fun onPause() {
         super.onPause()
+        // Un-registers the observers from the live data in the viewmodel
         viewModel.lockList.removeObserver(lockListObserver)
         viewModel.bluetoothDevice.removeObserver(bluetoothDeviceObserver)
         viewModel.connectionStatus.removeObserver(isConnectedObserver)
         viewModel.isSsidAndPasswordGood.removeObserver(internetStatusOnEsp32)
     }
 
+    // Request the permissions using an Android API
     private val requestMultiplePermissions =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
             permissions.entries.forEach {
@@ -170,6 +190,8 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
             }
         }
 
+    // When the Bluetooth device is clicked in the list, show the Wifi information dialog. When the information is recieved,
+    // Start the bluetooth connection
     override fun updateSelectedBluetoothDevice(device: BluetoothDevice) {
         val wifiInfoObject = object : WifiInformationInterface {
             override fun wifiInformation(ssid: String, password: String) {
@@ -183,6 +205,7 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
 
     }
 
+    // Disconnect the Bluetooth device from the phone when the application is killed.
     override fun onDestroy() {
         super.onDestroy()
         viewModel.disconnectFromDevice()

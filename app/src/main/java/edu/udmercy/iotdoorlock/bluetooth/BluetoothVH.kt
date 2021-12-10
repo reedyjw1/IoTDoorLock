@@ -18,6 +18,8 @@ class BluetoothVH(itemView: View): RecyclerView.ViewHolder(itemView) {
         set(value) {
             field = value
             value?.let { information ->
+                // Responsible for showing the individual devices
+                // Sets the text view in the UI cell and the button
                 itemView.title.text = information.device.name
                 itemView.setOnClickListener { deviceClick?.invoke(information) }
             }
@@ -25,6 +27,7 @@ class BluetoothVH(itemView: View): RecyclerView.ViewHolder(itemView) {
 
     companion object {
         fun create(parent: ViewGroup, viewType: Int): BluetoothVH {
+            //Inflates the UI Cell (UI cell is the peice of UI information that is repeated everytime a new device is added to the list on screen)
             return BluetoothVH(
                 LayoutInflater.from(parent.context)
                     .inflate(R.layout.bluetooth_cell, parent, false)

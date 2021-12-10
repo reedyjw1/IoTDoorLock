@@ -15,6 +15,7 @@ class BluetoothHandler(private val device: BluetoothDevice, private val ssid: St
         private const val TAG = "BluetoothHandler"
     }
 
+    // Class variables for the BluetoothSocket
     private var bluetoothSocket: BluetoothSocket? = null
     private val uuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
     private var connectedThread: ConnectedThread? = null
@@ -51,29 +52,37 @@ class BluetoothHandler(private val device: BluetoothDevice, private val ssid: St
     }
 
     fun setBluetoothReceiverListener(mListener: BluetoothReceiver) {
+        // Lister that passes information received from the Bluetooth socket to  a different class (For updating the UI)
         forwardingListener = mListener
     }
 
     fun disconnect() {
+        // Stops the thread, and clears it from memory
         connectedThread?.cancel()
         connectedThread = null
     }
 
+    // Custom Thread Class for handling writing to the socket and receiving data (prevents blocking UI thread)
     private inner class ConnectedThread(private val mmSocket: BluetoothSocket): Thread()  {
 
         var listener: BluetoothReceiver? = null
         private var alive = true
 
         override fun run() {
+            // When function is called, starts a loop always listening for data sent through the socket
             alive = true
             while (alive) {
                 try {
+                    // If there is data to be read,
                     if (mmSocket.inputStream.available() > 0) {
                         val buffered = mmSocket.inputStream.bufferedReader()
+                        // Read every byte until the new line character
                         val msg = buffered.readLine()
+                        // Pass the infromation to the class that set up the listener
                         listener?.receivedBluetoothMessage(msg)
                     }
                 } catch (e: Exception) {
+                    // Notify ViewModel that an exception occured
                     val exception = e.localizedMessage ?: return
                     listener?.errorSending(exception)
                     Log.e(TAG, "run: $exception")
@@ -85,6 +94,7 @@ class BluetoothHandler(private val device: BluetoothDevice, private val ssid: St
         // Call this from the main activity to send data to the remote device.
         fun write(bytes: ByteArray) {
             try {
+                // Writes the bytes to the output stream of the Bluetooth Socket
                 mmSocket.outputStream.write(bytes)
                 Log.i(TAG, "write: sendingMessage=${bytes.decodeToString()}")
             } catch (e: IOException) {
@@ -95,6 +105,7 @@ class BluetoothHandler(private val device: BluetoothDevice, private val ssid: St
         }
 
         fun cancel() {
+            // Tries to clos the bluetooth socket
             try {
                 alive = false
                 mmSocket.close()
