@@ -9,7 +9,7 @@ import java.io.IOException
 import java.util.*
 import kotlin.Exception
 
-class BluetoothHandler(private val device: BluetoothDevice) {
+class BluetoothHandler(private val device: BluetoothDevice, private val ssid: String, private val password: String) {
 
     companion object {
         private const val TAG = "BluetoothHandler"
@@ -41,11 +41,11 @@ class BluetoothHandler(private val device: BluetoothDevice) {
                         run()
                     }
                 }
-                forwardingListener?.connected(true)
+                forwardingListener?.connected(true, ssid, password)
 
             } catch (e: Exception) {
                 Log.e(TAG, "connect Error: ${e.localizedMessage}")
-                forwardingListener?.connected(false)
+                forwardingListener?.connected(false, ssid, password)
             }
         }
     }
@@ -98,7 +98,7 @@ class BluetoothHandler(private val device: BluetoothDevice) {
             try {
                 alive = false
                 mmSocket.close()
-                listener?.connected(false)
+                listener?.connected(false, ssid, password)
             } catch (e: IOException) {
                 Log.e(TAG, "Could not close the connect socket", e)
             }

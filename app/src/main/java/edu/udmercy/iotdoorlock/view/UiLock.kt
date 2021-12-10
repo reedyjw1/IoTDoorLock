@@ -5,7 +5,8 @@ import androidx.recyclerview.widget.DiffUtil
 data class UiLock (
     val uid: String,
     val name: String,
-    val locked: LockState,
+    val ipAddress: String,
+    var locked: Int,
 ){
     companion object{
         val DIFFER = object: DiffUtil.ItemCallback<UiLock>(){
@@ -20,6 +21,10 @@ data class UiLock (
         }
     }
 }
+
+data class UiLockList(
+    val deviceList: MutableList<UiLock>
+)
 
 enum class LockState(val int: Int) {
     LOCKED(1),

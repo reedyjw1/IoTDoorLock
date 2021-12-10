@@ -8,22 +8,23 @@ import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import edu.udmercy.iotdoorlock.cryptography.DHKeyExchange
-import edu.udmercy.iotdoorlock.view.LockState
-import edu.udmercy.iotdoorlock.view.MainViewModel
-import edu.udmercy.iotdoorlock.view.RecyclerAdapter
-import edu.udmercy.iotdoorlock.view.UiLock
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import edu.udmercy.iotdoorlock.bluetooth.BTDialogFragment
 import edu.udmercy.iotdoorlock.bluetooth.CommunicationInterface
+import edu.udmercy.iotdoorlock.bluetooth.btWifiDialogFragment.BTWifiDialogFragment
+import edu.udmercy.iotdoorlock.bluetooth.btWifiDialogFragment.WifiInformationInterface
 import edu.udmercy.iotdoorlock.utils.SingleEvent
+import edu.udmercy.iotdoorlock.utils.fromJson
+import edu.udmercy.iotdoorlock.view.*
 
 
 class MainActivity : AppCompatActivity(), CommunicationInterface {
@@ -46,7 +47,16 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
         }
 
     private val adapter by lazy {
-        RecyclerAdapter()
+        RecyclerAdapter().apply {
+            onDeviceClick = {
+                Log.i(TAG, "lockState: ${it.locked}")
+                if (it.locked == 0) {
+                    viewModel.ioTDeviceClicked(it.ipAddress, 1)
+                } else {
+                    viewModel.ioTDeviceClicked(it.ipAddress, 0)
+                }
+            }
+        }
     }
 
     private val isConnectedObserver = Observer { event: SingleEvent<Boolean> ->
@@ -61,23 +71,32 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
 
     }
 
+    private val internetStatusOnEsp32 = Observer { event: SingleEvent<Boolean?> ->
+        event.getContentIfNotHandledOrNull()?.let { status: Boolean? ->
+            if (status == null) {
+                Log.i(TAG, "internestStatusOnEsp32: null")
+            } else if(!status) {
+                Toast.makeText(this, "Invalid Wifi Name or Password. Please try again!", Toast.LENGTH_LONG).show()
+            }
+
+        }
+
+    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         recyclerView.adapter = adapter
-        Log.i(TAG, "onCreate: Bluetooth adapter available=${btAdapter!=null}")
-        Log.i(TAG, "onCreate: Bluetooth adapter enabled=${btAdapter.isEnabled}")
 
-        //viewModel.lockList.postValue(mutableListOf(UiLock("test", "IoT Door Lock 1", LockState.LOCKED)))
+        viewModel.getMostRecentLockList(null)
+
         bluetoothFab.setOnClickListener {
-            BTDialogFragment().setCommunicationInterface(this).show(supportFragmentManager, "bluetoothDevice")
+            BTDialogFragment().setCommunicationInterface(this)
+                .show(supportFragmentManager, "bluetoothDevice")
         }
-        //viewModel.startWifiTcpConnection()
-        testFab.setOnClickListener {
-            viewModel.sendBluetoothMsg("{\"username\": \"john123\", \"password\": \"adminpassword\"}")
-            //viewModel.sendNetworkRequest("Hello ESP32 from the Wifi!")
-        }
+
+        testFab.visibility = View.INVISIBLE
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             requestMultiplePermissions.launch(
@@ -89,7 +108,7 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
                     Manifest.permission.ACCESS_COARSE_LOCATION,
                     Manifest.permission.ACCESS_FINE_LOCATION,
 
-                )
+                    )
             )
         } else {
             requestMultiplePermissions.launch(
@@ -123,6 +142,7 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
 
     @SuppressLint("NotifyDataSetChanged")
     private fun updateLockList(list: List<UiLock>) {
+        Log.i(TAG, "updateLockList: updating lock list values")
         adapter.submitList(list)
         adapter.notifyDataSetChanged()
     }
@@ -132,6 +152,7 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
         viewModel.lockList.observe(this, lockListObserver)
         viewModel.bluetoothDevice.observe(this, bluetoothDeviceObserver)
         viewModel.connectionStatus.observe(this, isConnectedObserver)
+        viewModel.isSsidAndPasswordGood.observe(this, internetStatusOnEsp32)
     }
 
     override fun onPause() {
@@ -139,17 +160,27 @@ class MainActivity : AppCompatActivity(), CommunicationInterface {
         viewModel.lockList.removeObserver(lockListObserver)
         viewModel.bluetoothDevice.removeObserver(bluetoothDeviceObserver)
         viewModel.connectionStatus.removeObserver(isConnectedObserver)
+        viewModel.isSsidAndPasswordGood.removeObserver(internetStatusOnEsp32)
     }
 
-    private val requestMultiplePermissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
-        permissions.entries.forEach {
-            Log.e("DEBUG", "${it.key} = ${it.value}")
+    private val requestMultiplePermissions =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+            permissions.entries.forEach {
+                Log.e("DEBUG", "${it.key} = ${it.value}")
+            }
         }
-    }
 
     override fun updateSelectedBluetoothDevice(device: BluetoothDevice) {
-        viewModel.startBluetoothConnection(device)
-        Log.i(TAG, "updateSelectedBluetoothDevice: $device")
+        val wifiInfoObject = object : WifiInformationInterface {
+            override fun wifiInformation(ssid: String, password: String) {
+                viewModel.startBluetoothConnection(device, ssid, password)
+                Log.i(TAG, "updateSelectedBluetoothDevice: $device")
+            }
+
+        }
+        BTWifiDialogFragment().setCommunicationInterface(wifiInfoObject)
+            .show(supportFragmentManager, "WifiInformation")
+
     }
 
     override fun onDestroy() {

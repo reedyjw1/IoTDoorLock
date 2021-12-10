@@ -9,20 +9,29 @@ import edu.udmercy.iotdoorlock.R
 import kotlinx.android.synthetic.main.lock_cell.view.*
 
 class LockVH(itemView: View): RecyclerView.ViewHolder(itemView) {
+    var deviceClick: OnDeviceClick? = null
+
     var entity: UiLock? = null
         set(value) {
             field = value
             value?.let { information ->
                 Log.i("ViewHolder", "updating List: $information")
                 itemView.titleTextView.text = information.name
-                itemView.descriptionChip.text = if (information.locked == LockState.LOCKED) {
+
+                if (information.locked == 3) {
+                    itemView.descriptionChip.visibility = View.INVISIBLE
+                    return@let
+                } else {
+                    itemView.descriptionChip.visibility = View.VISIBLE
+                }
+                itemView.descriptionChip.text = if (information.locked == 1) {
                     "Locked"
                 } else {
                     "Unlocked"
                 }
-                itemView.descriptionChip.isChecked = information.locked == LockState.LOCKED
+                itemView.descriptionChip.isChecked = information.locked == 1
                 itemView.descriptionChip.setOnClickListener {
-                    // TODO - Propagate on click to view model
+                    deviceClick?.invoke(information)
                 }
             }
         }

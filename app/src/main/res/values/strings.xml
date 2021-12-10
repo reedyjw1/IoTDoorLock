@@ -1,4 +1,6 @@
 <resources>
     <string name="app_name">IoTDoorLock</string>
     <string name="bt_dialog_instructions">Please Select the Door Lock Device:</string>
+    <string name="saved_devices_sp">saved_devices_sp</string>
+    <string name="shared_prefs_key">SHARED_PREFS_KEY</string>
 </resources>
